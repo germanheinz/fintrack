@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getMonth, getYear } from 'date-fns';
@@ -20,6 +21,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [date, setDate] = useState(new Date());
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -70,7 +72,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] || 'there'}</Text>
           <Text style={styles.subGreeting}>Here's your overview</Text>
@@ -167,8 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
     backgroundColor: '#fff',
   },
   greeting: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
