@@ -1,0 +1,18 @@
+# Node / Expo
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/.env
+
+# Java / Maven
+backend/target/
+backend/.mvn/
+*.jar
+*.class
+
+# Docker
+.env
+
+# OS
+.DS_Store
+Thumbs.db

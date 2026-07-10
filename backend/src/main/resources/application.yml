@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fintrack}
+    username: ${DB_USER:fintrack}
+    password: ${DB_PASS:fintrack123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+jwt:
+  secret: ${JWT_SECRET:fintrack-super-secret-key-2024-change-in-production}
+  expiration: 2592000000
+
+server:
+  port: 8080
