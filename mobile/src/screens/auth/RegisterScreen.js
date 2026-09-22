@@ -21,6 +21,20 @@ const COLORS = {
   bg: '#F8F8FF',
 };
 
+const Field = ({ label, value, onChangeText, error, ...props }) => (
+  <View style={styles.field}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      style={[styles.input, error && styles.inputError]}
+      placeholderTextColor={COLORS.subtext}
+      value={value}
+      onChangeText={onChangeText}
+      {...props}
+    />
+    {error ? <Text style={styles.errorText}>{error}</Text> : null}
+  </View>
+);
+
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
   const [name, setName] = useState('');
@@ -28,6 +42,11 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const handleChange = (setter, key) => (t) => {
+    setter(t);
+    setErrors((e) => ({ ...e, [key]: null }));
+  };
 
   const validate = () => {
     const errs = {};
@@ -53,20 +72,6 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  const Field = ({ label, value, onChange, error, ...props }) => (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, error && styles.inputError]}
-        placeholderTextColor={COLORS.subtext}
-        value={value}
-        onChangeText={(t) => { onChange(t); setErrors((e) => ({ ...e, [label.toLowerCase()]: null })); }}
-        {...props}
-      />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
-  );
-
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -83,7 +88,7 @@ export default function RegisterScreen({ navigation }) {
           <Field
             label="Name"
             value={name}
-            onChange={setName}
+            onChangeText={handleChange(setName, 'name')}
             error={errors.name}
             placeholder="John Doe"
             autoCapitalize="words"
@@ -91,7 +96,7 @@ export default function RegisterScreen({ navigation }) {
           <Field
             label="Email"
             value={email}
-            onChange={setEmail}
+            onChangeText={handleChange(setEmail, 'email')}
             error={errors.email}
             placeholder="you@example.com"
             keyboardType="email-address"
@@ -101,7 +106,7 @@ export default function RegisterScreen({ navigation }) {
           <Field
             label="Password"
             value={password}
-            onChange={setPassword}
+            onChangeText={handleChange(setPassword, 'password')}
             error={errors.password}
             placeholder="••••••••"
             secureTextEntry

@@ -146,6 +146,15 @@ export const createCategory = async (userId, { name, icon, color, type }) => {
   return { id, name, icon, color, type, user_id: userId };
 };
 
+export const updateCategory = async (userId, categoryId, { name, icon, color }) => {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE categories SET name = ?, icon = ?, color = ? WHERE id = ? AND user_id = ?',
+    [name, icon, color, categoryId, userId]
+  );
+  return { id: categoryId, name, icon, color, user_id: userId };
+};
+
 export const deleteCategory = async (userId, categoryId) => {
   const db = await getDb();
   const used = await db.getFirstAsync(

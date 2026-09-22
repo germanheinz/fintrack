@@ -13,7 +13,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { getCategories, createCategory, deleteCategory } from '../db/localDb';
+import { getCategories, createCategory, updateCategory, deleteCategory } from '../db/localDb';
 
 const ICON_OPTIONS = ['🍔', '🍽️', '🚗', '🛍️', '🎬', '💊', '🏠', '⚡', '💼', '💻', '📈', '🎓', '✈️', '👕', '🏃', '🎁', '❓'];
 const COLOR_OPTIONS = ['#6C63FF', '#4CAF50', '#F44336', '#FF9800', '#2196F3', '#E91E63', '#009688', '#795548'];
@@ -24,6 +24,7 @@ export default function CategoriesScreen() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState(ICON_OPTIONS[ICON_OPTIONS.length - 1]);
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0]);
@@ -72,22 +73,51 @@ export default function CategoriesScreen() {
     }
     setSaving(true);
     try {
-      await createCategory(user.id, {
-        name: newName.trim(),
-        icon: newIcon,
-        color: newColor,
-        type: tab,
-      });
-      setModalVisible(false);
-      setNewName('');
-      setNewIcon(ICON_OPTIONS[ICON_OPTIONS.length - 1]);
-      setNewColor(COLOR_OPTIONS[0]);
+      if (editingId) {
+        await updateCategory(user.id, editingId, {
+          name: newName.trim(),
+          icon: newIcon,
+          color: newColor,
+        });
+      } else {
+        await createCategory(user.id, {
+          name: newName.trim(),
+          icon: newIcon,
+          color: newColor,
+          type: tab,
+        });
+      }
+      closeModal();
       fetchCategories();
     } catch {
-      Alert.alert('Error', 'Failed to create category');
+      Alert.alert('Error', editingId ? 'Failed to update category' : 'Failed to create category');
     } finally {
       setSaving(false);
     }
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setNewName('');
+    setNewIcon(ICON_OPTIONS[ICON_OPTIONS.length - 1]);
+    setNewColor(COLOR_OPTIONS[0]);
+    setModalVisible(true);
+  };
+
+  const openEdit = (cat) => {
+    setEditingId(cat.id);
+    setNewName(cat.name);
+    setNewIcon(cat.icon);
+    setNewColor(cat.color || COLOR_OPTIONS[0]);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingId(null);
+    setNewName('');
+    setNewIcon(ICON_OPTIONS[ICON_OPTIONS.length - 1]);
+    setNewColor(COLOR_OPTIONS[0]);
   };
 
   const filtered = categories.filter((c) => c.type === tab);
@@ -97,6 +127,7 @@ export default function CategoriesScreen() {
     return (
       <TouchableOpacity
         style={styles.catRow}
+        onPress={() => openEdit(item)}
         onLongPress={() => handleDelete(item)}
         activeOpacity={0.7}
       >
@@ -147,7 +178,7 @@ export default function CategoriesScreen() {
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.fab} onPress={openCreate} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
@@ -155,8 +186,10 @@ export default function CategoriesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New {tab === 'EXPENSE' ? 'Expense' : 'Income'} Category</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalTitle}>
+                {editingId ? 'Edit Category' : `New ${tab === 'EXPENSE' ? 'Expense' : 'Income'} Category`}
+              </Text>
+              <TouchableOpacity onPress={closeModal}>
                 <Ionicons name="close" size={22} color="#666" />
               </TouchableOpacity>
             </View>
@@ -171,6 +204,19 @@ export default function CategoriesScreen() {
             />
 
             <Text style={styles.fieldLabel}>Icon</Text>
+            <View style={styles.iconRow}>
+              <View style={styles.emojiPreview}>
+                <Text style={styles.emojiPreviewText}>{newIcon}</Text>
+              </View>
+              <TextInput
+                style={styles.emojiInput}
+                value={newIcon}
+                onChangeText={(t) => setNewIcon(t)}
+                placeholder="Type any emoji 😀"
+                placeholderTextColor="#999"
+                maxLength={8}
+              />
+            </View>
             <View style={styles.iconGrid}>
               {ICON_OPTIONS.map((icon) => (
                 <TouchableOpacity
@@ -195,7 +241,7 @@ export default function CategoriesScreen() {
             </View>
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleAdd} disabled={saving}>
-              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Add Category</Text>}
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{editingId ? 'Save Changes' : 'Add Category'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -263,6 +309,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  iconRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  emojiPreview: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: '#F0EEFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+  },
+  emojiPreviewText: { fontSize: 26 },
+  emojiInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 18,
+    color: '#1A1A2E',
+    backgroundColor: '#FAFAFA',
+  },
   iconOption: {
     width: 40,
     height: 40,
