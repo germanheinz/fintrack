@@ -3,15 +3,9 @@
     "name": "FinTrack",
     "slug": "fintrack",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fintrack.app"
@@ -27,9 +21,30 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "extra": {
-      "apiBaseUrl": "http://localhost:8080/api"
-    }
+      "apiBaseUrl": "http://localhost:8080/api",
+      "eas": {
+        "projectId": "1866f6ad-9b68-4e2c-bf11-e43bb1120c7b"
+      }
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ]
   }
 }
