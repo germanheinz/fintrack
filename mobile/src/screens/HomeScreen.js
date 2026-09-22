@@ -78,6 +78,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.subGreeting}>Here's your overview</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.navigate('Settings')}>
+            <Ionicons name="settings-outline" size={24} color="#6C63FF" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.navigate('Yearly')}>
             <Ionicons name="calendar-outline" size={26} color="#6C63FF" />
           </TouchableOpacity>

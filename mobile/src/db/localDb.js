@@ -271,3 +271,61 @@ export const getMonthlySummary = async (userId, month, year) => {
     expensesByCategory,
   };
 };
+
+// ── Backup: export / import ─────────────────────────────────────────────────
+
+const BACKUP_VERSION = 1;
+
+export const exportUserData = async (userId) => {
+  const db = await getDb();
+  const user = await db.getFirstAsync(
+    'SELECT name, email FROM users WHERE id = ?',
+    [userId]
+  );
+  const categories = await db.getAllAsync(
+    'SELECT id, name, icon, color, type, is_default FROM categories WHERE user_id = ?',
+    [userId]
+  );
+  const transactions = await db.getAllAsync(
+    'SELECT id, amount, description, date, type, category_id, created_at FROM transactions WHERE user_id = ?',
+    [userId]
+  );
+  return {
+    app: 'fintrack',
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    user,
+    categories,
+    transactions,
+  };
+};
+
+export const importUserData = async (userId, data) => {
+  if (!data || data.app !== 'fintrack' || !Array.isArray(data.categories) || !Array.isArray(data.transactions)) {
+    throw new Error('Invalid backup file');
+  }
+
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM transactions WHERE user_id = ?', [userId]);
+    await db.runAsync('DELETE FROM categories WHERE user_id = ?', [userId]);
+
+    for (const c of data.categories) {
+      await db.runAsync(
+        'INSERT INTO categories (id, name, icon, color, type, user_id, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [c.id, c.name, c.icon, c.color, c.type, userId, c.is_default ? 1 : 0]
+      );
+    }
+    for (const t of data.transactions) {
+      await db.runAsync(
+        'INSERT INTO transactions (id, amount, description, date, type, category_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [t.id, t.amount, t.description || '', t.date, t.type, t.category_id, userId, t.created_at || new Date().toISOString()]
+      );
+    }
+  });
+
+  return {
+    categories: data.categories.length,
+    transactions: data.transactions.length,
+  };
+};

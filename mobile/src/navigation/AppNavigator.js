@@ -14,6 +14,7 @@ import ChartsScreen from '../screens/ChartsScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import YearlyScreen from '../screens/YearlyScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -72,6 +73,7 @@ function MainNavigator() {
         options={{ presentation: 'modal' }}
       />
       <RootStack.Screen name="Yearly" component={YearlyScreen} />
+      <RootStack.Screen name="Settings" component={SettingsScreen} />
     </RootStack.Navigator>
   );
 }
