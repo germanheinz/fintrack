@@ -29,6 +29,7 @@ export default function HomeScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async (d = date) => {
+    if (!user) return; // logout en curso: la pantalla sigue montada un instante durante la transición
     try {
       const month = getMonth(d) + 1;
       const year = getYear(d);
@@ -45,7 +46,7 @@ export default function HomeScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [date, user.id]);
+  }, [date, user?.id]);
 
   useFocusEffect(
     useCallback(() => {

@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "fintrack",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fintrack.app"
@@ -27,7 +28,7 @@
       "web"
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:8080/api",
+      "apiBaseUrl": "http://localhost:8081/api",
       "eas": {
         "projectId": "1866f6ad-9b68-4e2c-bf11-e43bb1120c7b"
       }
@@ -37,6 +38,7 @@
       "expo-sqlite",
       "expo-status-bar",
       "expo-font",
+      "expo-share-intent",
       [
         "expo-splash-screen",
         {

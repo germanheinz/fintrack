@@ -37,6 +37,7 @@ export default function TransactionsScreen({ navigation, route }) {
   const [loading, setLoading]         = useState(true);
 
   const fetchTransactions = useCallback(async (d, f) => {
+    if (!user) return; // logout en curso: la pantalla sigue montada un instante durante la transición
     try {
       setLoading(true);
       const params = { month: getMonth(d) + 1, year: getYear(d) };
@@ -48,7 +49,7 @@ export default function TransactionsScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => { fetchTransactions(date, filter); }, [date, filter])

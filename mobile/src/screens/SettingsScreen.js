@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform,
+  View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../context/AuthContext';
 import { exportUserData, importUserData } from '../db/localDb';
+import { connectToBackend, syncBackupToBackend } from '../api/backendSync';
 
 export default function SettingsScreen({ navigation }) {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
+  const [backendEmail, setBackendEmail] = useState('');
+  const [backendPassword, setBackendPassword] = useState('');
 
   const handleExport = async () => {
     try {
@@ -73,7 +77,7 @@ export default function SettingsScreen({ navigation }) {
     try {
       const picked = await DocumentPicker.getDocumentAsync({
         type: 'application/json',
-        copyToCacheDirectory: true,
+        copyToCacheDirectory: false,
       });
       if (picked.canceled || !picked.assets?.length) return;
       const asset = picked.assets[0];
@@ -89,9 +93,12 @@ export default function SettingsScreen({ navigation }) {
             onPress: async () => {
               try {
                 setBusy(true);
-                const json = await FileSystem.readAsStringAsync(asset.uri, {
-                  encoding: FileSystem.EncodingType.UTF8,
-                });
+                // El módulo /legacy rechaza esquemas content:// que no reconoce (ej. el
+                // proveedor de Descargas de Android); el módulo nuevo de expo-file-system
+                // sí sabe leer content:// arbitrario sin copiar nada antes.
+                const json = Platform.OS === 'web'
+                  ? await (await fetch(asset.uri)).text()
+                  : await new File(asset.uri).text();
                 await runImport(json);
               } catch (e) {
                 Alert.alert('Import failed', e.message || 'Could not import data');
@@ -104,6 +111,28 @@ export default function SettingsScreen({ navigation }) {
       );
     } catch (e) {
       Alert.alert('Import failed', e.message || 'Could not read file');
+    }
+  };
+
+  const handleBackendSync = async () => {
+    if (!backendEmail.trim() || !backendPassword) {
+      Alert.alert('Missing data', 'Enter the email and password for your backend account');
+      return;
+    }
+    try {
+      setBusy(true);
+      await connectToBackend(backendEmail.trim().toLowerCase(), backendPassword);
+      const backup = await exportUserData(user.id);
+      const result = await syncBackupToBackend(backup);
+      Alert.alert(
+        'Sync complete',
+        `${result.categoriesCreated} new categories, ${result.categoriesReused} already there.\n` +
+        `${result.transactionsImported} transactions synced, ${result.transactionsSkippedAsDuplicate} were already synced.`
+      );
+    } catch (e) {
+      Alert.alert('Sync failed', e.response?.data?.message || e.message || 'Could not reach the backend');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -150,6 +179,40 @@ export default function SettingsScreen({ navigation }) {
           <Ionicons name="log-out-outline" size={20} color="#F44336" />
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
+
+        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Sync with backend (beta)</Text>
+        <Text style={styles.hint}>
+          Local-only for now (your laptop, same wifi). Connects or creates a backend
+          account with these credentials and uploads your current data — safe to run
+          more than once, it won't duplicate anything already synced.
+        </Text>
+        <View style={styles.card}>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.input}
+              placeholder="Backend email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={backendEmail}
+              onChangeText={setBackendEmail}
+            />
+            <TextInput
+              style={[styles.input, { marginTop: 8 }]}
+              placeholder="Backend password"
+              secureTextEntry
+              value={backendPassword}
+              onChangeText={setBackendPassword}
+            />
+          </View>
+        </View>
+        <TouchableOpacity
+          style={[styles.card, { justifyContent: 'center' }]}
+          onPress={handleBackendSync}
+          disabled={busy}
+        >
+          <Ionicons name="sync-outline" size={20} color="#6C63FF" />
+          <Text style={[styles.cardTitle, { marginLeft: 10 }]}>Connect & sync now</Text>
+        </TouchableOpacity>
       </View>
 
       {busy && (
@@ -181,6 +244,10 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#333' },
   cardSub: { fontSize: 12, color: '#999', marginTop: 2 },
+  input: {
+    borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#333',
+  },
   logout: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, marginTop: 24, padding: 14, borderRadius: 14,
