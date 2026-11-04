@@ -1,5 +1,6 @@
 package com.fintrack.backend.ai;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -9,8 +10,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** Keyword rules that stand in for fintrack_ai until the real service exists. */
+/** Keyword rules that stand in for fintrack_ai. Active when fintrack.ai.mode is stub (the default). */
 @Component
+@ConditionalOnProperty(name = "fintrack.ai.mode", havingValue = "stub", matchIfMissing = true)
 public class StubCategorizationClient implements CategorizationClient {
 
     private static final BigDecimal MATCH = new BigDecimal("0.90");

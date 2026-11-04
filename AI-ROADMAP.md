@@ -475,8 +475,12 @@ tickets reales cuadra, se agrega el fallback `/extract` en `fintrack_ai`
          de ítem y producto canónico (lookup → RAG → modelo).
          Hecho: worker (`OutboxWorker`, claim con `SKIP LOCKED`, lease,
          backoff, `FAILED`), puerto `CategorizationClient`, stub por
-         palabras clave y `GET /api/receipts/{id}`. Falta: `fintrack_ai`
-         real y mostrar el estado en la app.
+         palabras clave y `GET /api/receipts/{id}`. Servicio `fintrack_ai/`
+         (Python, FastAPI, Anthropic con tool use): categoriza con la lista
+         del usuario como enum, valida la salida y se conecta con
+         `fintrack.ai.mode=http`. Falta: cascade (lookup exacto y RAG con
+         pgvector), memoria con las correcciones del usuario y mostrar el
+         estado en la app.
    - [ ] 6e. Fallback y cascade, estados `CATEGORIZING`/`NEEDS_REVIEW` en la
          UI, y OCR de respaldo (`/extract`) si el parseo por reglas falla
    - [ ] 6f. Corpus de eval de tickets (30-50 fotos anonimizadas) en CI +

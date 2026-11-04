@@ -24,6 +24,12 @@ server:
 
 fintrack:
   ai:
+    # stub = keyword rules inside the backend. http = the fintrack_ai service.
+    mode: ${FINTRACK_AI_MODE:stub}
+    base-url: ${FINTRACK_AI_URL:http://localhost:8000}
+    # Shared secret with fintrack_ai. Dev value only. Real value comes from a secrets manager.
+    token: ${FINTRACK_AI_TOKEN:dev-only-ai-token}
+    timeout-seconds: 30
     # Below this confidence, or with an unknown category, the receipt goes to review.
     confidence-threshold: 0.7
   outbox:
