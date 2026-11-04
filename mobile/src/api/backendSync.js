@@ -9,6 +9,12 @@ const BACKEND_TOKEN_KEY = 'backendSyncToken';
 
 const backendClient = axios.create({ baseURL: BASE_URL, timeout: 15000 });
 
+const authConfig = async () => {
+  const token = await AsyncStorage.getItem(BACKEND_TOKEN_KEY);
+  if (!token) throw new Error('Connect to the backend first (Settings)');
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 export const connectToBackend = async (email, password) => {
   try {
     const { data } = await backendClient.post('/auth/login', { email, password });
@@ -25,10 +31,26 @@ export const connectToBackend = async (email, password) => {
 };
 
 export const syncBackupToBackend = async (backup) => {
-  const token = await AsyncStorage.getItem(BACKEND_TOKEN_KEY);
-  if (!token) throw new Error('Connect to the backend first');
-  const { data } = await backendClient.post('/migration/import-backup', backup, {
-    headers: { Authorization: `Bearer ${token}` },
+  const { data } = await backendClient.post('/migration/import-backup', backup, await authConfig());
+  return data;
+};
+
+// The app categories live in the local database; the backend needs its own copy by name.
+export const findOrCreateExpenseCategory = async ({ name, icon, color }) => {
+  const config = await authConfig();
+  const { data: categories } = await backendClient.get('/categories', config);
+  const existing = categories.find((c) => c.type === 'EXPENSE' && c.name === name);
+  if (existing) return existing.id;
+  const { data } = await backendClient.post('/categories', { name, icon, color, type: 'EXPENSE' }, config);
+  return data.id;
+};
+
+// The same idempotency key must be reused when the user retries the same receipt.
+export const submitReceipt = async (receipt, idempotencyKey) => {
+  const config = await authConfig();
+  const { data } = await backendClient.post('/receipts', receipt, {
+    ...config,
+    headers: { ...config.headers, 'Idempotency-Key': idempotencyKey },
   });
   return data;
 };

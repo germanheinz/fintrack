@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { getMonthlySummary } from '../db/localDb';
 
@@ -22,6 +23,7 @@ const fmt = (n) =>
 
 export default function YearlyScreen({ navigation }) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [year, setYear]       = useState(new Date().getFullYear());
   const [months, setMonths]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function YearlyScreen({ navigation }) {
   return (
     <View style={s.container}>
       {/* Header */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.back}>
           <Ionicons name="chevron-back" size={22} color="#1A1A2E" />
         </TouchableOpacity>
@@ -85,7 +87,10 @@ export default function YearlyScreen({ navigation }) {
       {loading ? (
         <View style={s.centered}><ActivityIndicator size="large" color="#6C63FF" /></View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        >
 
           {/* Annual summary */}
           <View style={s.annualCard}>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform, TextInput,
+  ScrollView, KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -146,7 +147,11 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.iconBtn} />
       </View>
 
-      <View style={styles.body}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <ScrollView
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.sectionLabel}>Backup & transfer</Text>
         <Text style={styles.hint}>
           Move your data to another phone: export a backup file here, send it to the
@@ -213,7 +218,8 @@ export default function SettingsScreen({ navigation }) {
           <Ionicons name="sync-outline" size={20} color="#6C63FF" />
           <Text style={[styles.cardTitle, { marginLeft: 10 }]}>Connect & sync now</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
 
       {busy && (
         <View style={styles.overlay}>

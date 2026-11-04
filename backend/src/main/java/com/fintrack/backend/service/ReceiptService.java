@@ -80,7 +80,13 @@ public class ReceiptService {
         BigDecimal discount = orZero(request.discountAmount());
         validateTotals(request, tax, discount);
 
+        // save() with a preset id would update an existing row, even one of another user.
+        if (request.transactionId() != null && transactionRepository.existsById(request.transactionId())) {
+            throw new BadRequestException("Transaction id is already in use: " + request.transactionId());
+        }
+
         Transaction transaction = transactionRepository.save(Transaction.builder()
+                .id(request.transactionId())
                 .userId(userId)
                 .categoryId(request.categoryId())
                 .amount(request.total())
@@ -121,6 +127,14 @@ public class ReceiptService {
                 .build());
 
         return new CreatedReceipt(ReceiptResponse.from(receipt, transaction, savedItems), true);
+    }
+
+    @Transactional(readOnly = true)
+    public ReceiptResponse get(UUID userId, UUID receiptId) {
+        Receipt receipt = receiptRepository.findById(receiptId)
+                .filter(found -> found.getUserId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found: " + receiptId));
+        return toResponse(receipt, userId);
     }
 
     private ReceiptResponse toResponse(Receipt receipt, UUID userId) {

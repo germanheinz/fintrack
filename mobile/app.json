@@ -40,6 +40,13 @@
       "expo-font",
       "expo-share-intent",
       [
+        "expo-image-picker",
+        {
+          "cameraPermission": "FinTrack uses the camera to scan receipts.",
+          "photosPermission": "FinTrack reads receipt photos from your gallery."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash.png",

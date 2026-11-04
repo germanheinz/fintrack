@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, getMonth, getYear } from 'date-fns';
 import { getTransactions, deleteTransaction } from '../db/localDb';
 import MonthSelector from '../components/MonthSelector';
@@ -27,6 +28,7 @@ const groupByDate = (transactions) => {
 };
 
 export default function TransactionsScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const initDate = route?.params?.initialMonth
     ? new Date(route.params.initialYear, route.params.initialMonth - 1, 1)
@@ -76,14 +78,20 @@ export default function TransactionsScreen({ navigation, route }) {
   };
 
   const handleEdit = (tx) => {
-    navigation.navigate('AddTransaction', { transaction: tx });
+    if (tx.itemCount > 0) {
+      navigation.navigate('ReceiptDetail', { transaction: tx });
+    } else {
+      navigation.navigate('AddTransaction', { transaction: tx });
+    }
   };
 
   const sections = groupByDate(transactions);
 
   return (
     <View style={s.container}>
-      <MonthSelector date={date} onChange={handleMonthChange} />
+      <View style={{ paddingTop: insets.top, backgroundColor: '#fff' }}>
+        <MonthSelector date={date} onChange={handleMonthChange} />
+      </View>
 
       <View style={s.filterRow}>
         {FILTERS.map((f) => (

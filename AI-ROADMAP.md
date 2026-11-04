@@ -244,8 +244,10 @@ Responsabilidades:
   para que aprenda.
 
 Contrato backend → `fintrack_ai` (idempotente por `receipt_id`):
-- Request: `{user_id, receipt_id, merchant, items: [{raw_name, quantity, line_total}], prompt_version}`
-- Response: `{items: [{raw_name, item_category, canonical_product, confidence}], model, model_version, latency_ms}`
+- Request: `{user_id, receipt_id, merchant, items: [{position, raw_name, quantity, line_total}], item_categories: [nombres válidos]}`
+- Response: `{items: [{position, item_category, confidence}], model, model_version}`
+- Los ítems se identifican por `position`, no por nombre: un ticket puede
+  repetir nombres. Una categoría fuera de `item_categories` se descarta.
 - Autenticación entre servicios con token interno o mTLS, no con el JWT del
   usuario.
 
@@ -463,12 +465,20 @@ tickets reales cuadra, se agrega el fallback `/extract` en `fintrack_ai`
    - [x] 6a. Datos sin IA: migración `V2__receipts.sql`, `POST /api/receipts`
          (idempotente, con validación de totales y evento de outbox),
          `GET /api/item-categories` y reportes en `/api/reports/*`
-   - [ ] 6b. Upload de foto (URL prefirmada) + extracción con un proveedor →
-         JSON validado + pantalla de revisión en el móvil
-   - [ ] 6c. Validador de totales + `PENDING_CONFIRMATION`
-   - [ ] 6d. Normalización de ítems a producto canónico (lookup → RAG → modelo)
-   - [ ] 6e. Procesamiento asíncrono (`202` + estado), fallback y cascade
-         (OCR en dispositivo → visión directa solo si es ilegible)
+   - [x] 6b. Foto + OCR en el dispositivo (ML Kit, dev client) + parseo por
+         reglas + pantalla de revisión en el móvil. La imagen no sale del
+         teléfono, así que no hay upload.
+   - [x] 6c. Total consistente con los ítems; el total impreso se muestra
+         aparte si difiere. Al guardar se crea una transacción local (mismo
+         id que en el backend) con sus ítems, visibles al tocarla.
+   - [ ] 6d. Worker del outbox + `fintrack_ai` (servicio aparte): categoría
+         de ítem y producto canónico (lookup → RAG → modelo).
+         Hecho: worker (`OutboxWorker`, claim con `SKIP LOCKED`, lease,
+         backoff, `FAILED`), puerto `CategorizationClient`, stub por
+         palabras clave y `GET /api/receipts/{id}`. Falta: `fintrack_ai`
+         real y mostrar el estado en la app.
+   - [ ] 6e. Fallback y cascade, estados `CATEGORIZING`/`NEEDS_REVIEW` en la
+         UI, y OCR de respaldo (`/extract`) si el parseo por reglas falla
    - [ ] 6f. Corpus de eval de tickets (30-50 fotos anonimizadas) en CI +
          métrica de `user_corrected` por ítem
 

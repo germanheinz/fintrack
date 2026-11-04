@@ -4,6 +4,7 @@ import {
   TouchableOpacity, Dimensions, Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { format, subMonths, getMonth, getYear } from 'date-fns';
@@ -210,6 +211,7 @@ const pie = StyleSheet.create({
 });
 
 export default function ChartsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [date, setDate]               = useState(new Date());
   const [loading, setLoading]         = useState(true);
@@ -340,7 +342,9 @@ export default function ChartsScreen({ navigation }) {
 
   return (
     <View style={s.container}>
-      <MonthSelector date={date} onChange={handleMonthChange} />
+      <View style={{ paddingTop: insets.top, backgroundColor: '#fff' }}>
+        <MonthSelector date={date} onChange={handleMonthChange} />
+      </View>
 
       {loading ? (
         <View style={s.centered}><ActivityIndicator size="large" color="#6C63FF" /></View>

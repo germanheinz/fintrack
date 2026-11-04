@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -15,6 +16,9 @@ import CategoriesScreen from '../screens/CategoriesScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import YearlyScreen from '../screens/YearlyScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ScanReceiptScreen from '../screens/ScanReceiptScreen';
+import ReviewReceiptScreen from '../screens/ReviewReceiptScreen';
+import ReceiptDetailScreen from '../screens/ReceiptDetailScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,6 +34,7 @@ function AuthNavigator() {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,8 +53,8 @@ function MainTabs() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#F0F0F0',
-          paddingBottom: 4,
-          height: 60,
+          paddingBottom: 4 + insets.bottom,
+          height: 60 + insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         headerShown: false,
@@ -74,6 +79,9 @@ function MainNavigator() {
       />
       <RootStack.Screen name="Yearly" component={YearlyScreen} />
       <RootStack.Screen name="Settings" component={SettingsScreen} />
+      <RootStack.Screen name="ScanReceipt" component={ScanReceiptScreen} />
+      <RootStack.Screen name="ReviewReceipt" component={ReviewReceiptScreen} />
+      <RootStack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} />
     </RootStack.Navigator>
   );
 }

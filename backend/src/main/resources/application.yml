@@ -23,6 +23,16 @@ server:
   port: ${SERVER_PORT:8081}
 
 fintrack:
+  ai:
+    # Below this confidence, or with an unknown category, the receipt goes to review.
+    confidence-threshold: 0.7
+  outbox:
+    enabled: true
+    poll-interval-ms: 2000
+    batch-size: 10
+    lease-seconds: 60
+    max-attempts: 5
+    backoff-base-seconds: 5
   jwt:
     # Solo para desarrollo local. En cualquier entorno real esto viene de un
     # secrets manager, nunca de este archivo versionado.

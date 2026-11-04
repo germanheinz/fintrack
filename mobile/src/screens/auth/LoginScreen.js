@@ -7,9 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 
 const COLORS = {
@@ -23,6 +23,7 @@ const COLORS = {
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,8 +53,11 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <Text style={styles.logo}>FinTrack</Text>
           <Text style={styles.tagline}>Your personal finance companion</Text>

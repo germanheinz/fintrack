@@ -41,6 +41,16 @@ export const initDb = async () => {
       user_id TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS transaction_items (
+      id TEXT PRIMARY KEY,
+      transaction_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      quantity REAL,
+      amount REAL NOT NULL
+    );
   `);
 };
 
@@ -170,10 +180,13 @@ export const deleteCategory = async (userId, categoryId) => {
 
 // ── Transactions ───────────────────────────────────────────────────────────
 
+const ITEM_COUNT_SQL = '(SELECT COUNT(*) FROM transaction_items i WHERE i.transaction_id = t.id) AS item_count';
+
 export const getTransactions = async (userId, { month, year, type, categoryId } = {}) => {
   const db = await getDb();
   let sql = `
-    SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
+    SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color,
+      ${ITEM_COUNT_SQL}
     FROM transactions t
     JOIN categories c ON t.category_id = c.id
     WHERE t.user_id = ?
@@ -212,13 +225,43 @@ export const updateTransaction = async (userId, id, { amount, description, date,
 
 export const deleteTransaction = async (userId, id) => {
   const db = await getDb();
+  await db.runAsync('DELETE FROM transaction_items WHERE transaction_id = ? AND user_id = ?', [id, userId]);
   await db.runAsync('DELETE FROM transactions WHERE id = ? AND user_id = ?', [id, userId]);
+};
+
+// Safe to call twice with the same id: it replaces the transaction and its items.
+export const createReceiptTransaction = async (userId, { id, amount, description, date, categoryId, items }) => {
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM transaction_items WHERE transaction_id = ? AND user_id = ?', [id, userId]);
+    await db.runAsync(
+      'INSERT OR REPLACE INTO transactions (id, amount, description, date, type, category_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, amount, description || '', date, 'EXPENSE', categoryId, userId]
+    );
+    for (let i = 0; i < items.length; i++) {
+      await db.runAsync(
+        'INSERT INTO transaction_items (id, transaction_id, user_id, position, name, quantity, amount) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [uuid(), id, userId, i, items[i].name, items[i].quantity ?? null, items[i].amount]
+      );
+    }
+  });
+  return getTransactionById(userId, id);
+};
+
+export const getTransactionItems = async (userId, transactionId) => {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    'SELECT * FROM transaction_items WHERE transaction_id = ? AND user_id = ? ORDER BY position',
+    [transactionId, userId]
+  );
+  return rows.map((row) => ({ id: row.id, name: row.name, quantity: row.quantity, amount: row.amount }));
 };
 
 export const getTransactionById = async (userId, id) => {
   const db = await getDb();
   const row = await db.getFirstAsync(
-    `SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
+    `SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color,
+       ${ITEM_COUNT_SQL}
      FROM transactions t JOIN categories c ON t.category_id = c.id
      WHERE t.id = ? AND t.user_id = ?`,
     [id, userId]
@@ -240,6 +283,7 @@ const mapTransaction = (row) => ({
     color: row.category_color,
   },
   createdAt: row.created_at,
+  itemCount: row.item_count || 0,
 });
 
 // ── Monthly summary ────────────────────────────────────────────────────────

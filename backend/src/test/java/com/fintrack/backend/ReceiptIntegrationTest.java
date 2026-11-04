@@ -11,6 +11,8 @@ import com.fintrack.backend.dto.ReceiptRequest;
 import com.fintrack.backend.dto.ReceiptRequest.ReceiptItemRequest;
 import com.fintrack.backend.dto.ReceiptResponse;
 import com.fintrack.backend.dto.RegisterRequest;
+import com.fintrack.backend.repository.CategoryRepository;
+import com.fintrack.backend.repository.ItemCategoryRepository;
 import com.fintrack.backend.repository.OutboxEventRepository;
 import com.fintrack.backend.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
@@ -55,11 +57,31 @@ class ReceiptIntegrationTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ItemCategoryRepository itemCategoryRepository;
+
     @Test
     void register_seedsDefaultItemCategories() {
         String token = registerAndGetToken("items-seed@fintrack.test");
 
         assertThat(itemCategories(token)).hasSize(15); // DefaultItemCategories.NAMES
+    }
+
+    @Test
+    void listCategories_whenUserHasNone_seedsTheDefaults() {
+        var register = new RegisterRequest("German", "no-categories@fintrack.test", "secret123");
+        AuthResponse auth = restTemplate.postForEntity("/api/auth/register", register, AuthResponse.class).getBody();
+        categoryRepository.deleteAll(categoryRepository.findByUserIdOrderByTypeAscNameAsc(auth.userId()));
+        itemCategoryRepository.deleteAll(itemCategoryRepository.findByUserIdOrderByNameAsc(auth.userId()));
+
+        ResponseEntity<CategoryResponse[]> categories = restTemplate.exchange(
+                "/api/categories", HttpMethod.GET, new HttpEntity<>(bearer(auth.token())), CategoryResponse[].class);
+
+        assertThat(categories.getBody()).hasSize(19); // DefaultCategories.ALL
+        assertThat(itemCategories(auth.token())).hasSize(15); // DefaultItemCategories.NAMES
     }
 
     @Test
@@ -106,6 +128,23 @@ class ReceiptIntegrationTest {
         assertThat(second.getBody().items()).hasSize(1);
         assertThat(transactionRepository.findAll().stream()
                 .filter(t -> t.getId().equals(first.getBody().transactionId()))).hasSize(1);
+    }
+
+    @Test
+    void createReceipt_withClientTransactionId_usesItAndRejectsReuse() {
+        String token = registerAndGetToken("receipt-client-id@fintrack.test");
+        UUID groceries = categoryId(token, "Groceries");
+        UUID clientId = UUID.randomUUID();
+        var request = new ReceiptRequest("Dia", LocalDate.parse("2026-10-10"), groceries, new BigDecimal("2.00"),
+                null, null, List.of(item("AGUA", "2.00", null)), clientId);
+
+        ResponseEntity<ReceiptResponse> first = postReceipt(token, "key-client-id-1", request);
+        ResponseEntity<Object> reused = restTemplate.exchange("/api/receipts", HttpMethod.POST,
+                new HttpEntity<>(request, headers(token, "key-client-id-2")), Object.class);
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(first.getBody().transactionId()).isEqualTo(clientId);
+        assertThat(reused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -211,7 +250,7 @@ class ReceiptIntegrationTest {
         return new ReceiptRequest(merchant, LocalDate.parse(date), categoryId, new BigDecimal(total),
                 tax == null ? null : new BigDecimal(tax),
                 discount == null ? null : new BigDecimal(discount),
-                items);
+                items, null);
     }
 
     private static ReceiptItemRequest item(String name, String lineTotal, UUID itemCategoryId) {

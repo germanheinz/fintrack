@@ -79,6 +79,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.subGreeting}>Here's your overview</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.navigate('ScanReceipt')}>
+            <Ionicons name="scan-outline" size={26} color="#6C63FF" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={24} color="#6C63FF" />
           </TouchableOpacity>
@@ -129,7 +132,11 @@ export default function HomeScreen({ navigation }) {
                   <TransactionItem
                     key={tx.id}
                     transaction={tx}
-                    onEdit={(t) => navigation.navigate('AddTransaction', { transaction: t })}
+                    onEdit={(t) =>
+                      t.itemCount > 0
+                        ? navigation.navigate('ReceiptDetail', { transaction: t })
+                        : navigation.navigate('AddTransaction', { transaction: t })
+                    }
                     onDelete={(t) => {
                       Alert.alert('Delete Transaction', 'Are you sure?', [
                         { text: 'Cancel', style: 'cancel' },

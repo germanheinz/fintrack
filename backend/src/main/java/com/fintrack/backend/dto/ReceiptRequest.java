@@ -21,7 +21,9 @@ public record ReceiptRequest(
         @PositiveOrZero(message = "Tax must not be negative") BigDecimal taxAmount,
         @PositiveOrZero(message = "Discount must not be negative") BigDecimal discountAmount,
         @NotEmpty(message = "At least one item is required")
-        @Size(max = 200, message = "Too many items") List<@Valid ReceiptItemRequest> items
+        @Size(max = 200, message = "Too many items") List<@Valid ReceiptItemRequest> items,
+        // Optional id chosen by the client, so a later backup import finds the same transaction.
+        UUID transactionId
 ) {
     public record ReceiptItemRequest(
             @NotBlank(message = "Item name is required") @Size(max = 255, message = "Item name is too long") String rawName,

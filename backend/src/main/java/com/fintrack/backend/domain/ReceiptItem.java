@@ -43,6 +43,9 @@ public class ReceiptItem {
     @Column(name = "item_category_id")
     private UUID itemCategoryId;
 
+    @Column(precision = 4, scale = 3)
+    private BigDecimal confidence;
+
     @PrePersist
     void onCreate() {
         if (id == null) id = UUID.randomUUID();

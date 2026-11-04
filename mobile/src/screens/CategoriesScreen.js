@@ -11,6 +11,7 @@ import {
   Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../db/localDb';
@@ -19,6 +20,7 @@ const ICON_OPTIONS = ['🍔', '🍽️', '🚗', '🛍️', '🎬', '💊', '�
 const COLOR_OPTIONS = ['#6C63FF', '#4CAF50', '#F44336', '#FF9800', '#2196F3', '#E91E63', '#009688', '#795548'];
 
 export default function CategoriesScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [tab, setTab] = useState('EXPENSE');
   const [categories, setCategories] = useState([]);
@@ -145,7 +147,7 @@ export default function CategoriesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { paddingTop: insets.top }]}>
         {['EXPENSE', 'INCOME'].map((t) => (
           <TouchableOpacity
             key={t}

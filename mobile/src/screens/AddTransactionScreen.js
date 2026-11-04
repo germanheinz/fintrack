@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, getDaysInMonth, getMonth, getYear } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import { getCategories, createTransaction, updateTransaction } from '../db/localDb';
@@ -21,6 +21,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 export default function AddTransactionScreen({ navigation, route }) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const editTx = route?.params?.transaction;
   const [type, setType] = useState(editTx?.type || 'EXPENSE');
   const [amount, setAmount] = useState(editTx ? String(editTx.amount) : '');
@@ -122,8 +123,8 @@ export default function AddTransactionScreen({ navigation, route }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.header}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#1A1A2E" />
         </TouchableOpacity>
@@ -242,7 +243,7 @@ export default function AddTransactionScreen({ navigation, route }) {
           )}
         </TouchableOpacity>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
